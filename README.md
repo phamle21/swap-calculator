@@ -47,4 +47,14 @@ php artisan migrate
 php artisan serve
 
 
-Visit: http://localhost:8000
+Visit: https://test-swap-calculator.2etitb.easypanel.host/
+
+---
+
+### ⚡ Optional: Optimize for better performance
+# Generate cache files for routes, config, and views
+php artisan optimize
+
+# (Use this when deploying or running in production)
+# To clear caches after updating code/config:
+php artisan optimize:clear
