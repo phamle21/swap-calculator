@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources\CurrencyPairs\Pages;
 
+use App\Filament\Imports\CurrencyPairImporter;
 use App\Filament\Resources\CurrencyPairs\CurrencyPairResource;
 use Filament\Actions\CreateAction;
+use Filament\Actions\ImportAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListCurrencyPairs extends ListRecords
@@ -13,6 +15,8 @@ class ListCurrencyPairs extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            ImportAction::make()
+                ->importer(CurrencyPairImporter::class),
             CreateAction::make(),
         ];
     }

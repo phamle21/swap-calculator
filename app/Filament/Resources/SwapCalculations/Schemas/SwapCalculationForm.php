@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SwapCalculations\Schemas;
 
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -18,40 +19,97 @@ class SwapCalculationForm
                 Select::make('currency_pair_id')
                     ->label('Currency Pair')
                     ->relationship('pair', 'symbol')
+                    ->preload()
                     ->searchable()
                     ->required(),
-                // Select::make('profile_id')
-                //     ->label('Profile')
-                //     ->relationship('profile', 'name')
-                //     ->searchable()
-                //     ->preload()
-                //     ->nullable(),
+
                 TextInput::make('lot_size')
                     ->required()
                     ->numeric()
-                    ->step('0.01'),
-                Select::make('position_type')
-                    ->options(['Long' => 'Long', 'Short' => 'Short'])
-                    ->required(),
-                TextInput::make('swap_rate')
-                    ->required()
+                    ->step('0.01')
+                    ->reactive()
+                    ->afterStateUpdated(
+                        fn($state, callable $set, callable $get) =>
+                        self::calculateTotal($set, $get)
+                    ),
+
+                TextInput::make('inputs.swap_long')
+                    ->label('Swap Long')
                     ->numeric()
-                    ->step('0.0001'),
+                    ->required()
+                    ->reactive()
+                    ->readOnly(fn(callable $get) => $get('position_type') === 'Short')
+                    ->helperText(fn(callable $get) =>
+                        $get('position_type') === 'Short'
+                            ? 'Swap Long is read-only for Short positions.'
+                            : null
+                    )
+                    ->afterStateUpdated(
+                        fn($state, callable $set, callable $get) =>
+                        self::calculateTotal($set, $get)
+                    ),
+
+                TextInput::make('inputs.swap_short')
+                    ->label('Swap Short')
+                    ->numeric()
+                    ->required()
+                    ->reactive()
+                    ->readOnly(fn(callable $get) => $get('position_type') === 'Long')
+                    ->helperText(fn(callable $get) =>
+                        $get('position_type') === 'Long'
+                            ? 'Swap Short is read-only for Long positions.'
+                            : null
+                    )
+                    ->afterStateUpdated(
+                        fn($state, callable $set, callable $get) =>
+                        self::calculateTotal($set, $get)
+                    ),
+
+                Radio::make('position_type')
+                    ->label('Position Type')
+                    ->options([
+                        'Long' => 'Long',
+                        'Short' => 'Short',
+                    ])
+                    ->inline()
+                    ->required()
+                    ->reactive()
+                    ->afterStateUpdated(
+                        fn($state, callable $set, callable $get) =>
+                        self::calculateTotal($set, $get)
+                    ),
+
                 TextInput::make('days')
-                    ->required()
+                    ->label('Holding Days')
                     ->numeric()
-                    ->step(1),
-                // Toggle::make('cross_wednesday'),
+                    ->required()
+                    ->reactive()
+                    ->afterStateUpdated(
+                        fn($state, callable $set, callable $get) =>
+                        self::calculateTotal($set, $get)
+                    ),
+
                 TextInput::make('total_swap')
                     ->numeric()
                     ->disabled()
                     ->helperText('Computed total swap (read-only)'),
+
                 Textarea::make('note')
                     ->rows(3),
-                KeyValue::make('inputs')
-                    ->keyLabel('Key')
-                    ->valueLabel('Value')
-                    ->columns(1),
+
             ]);
+    }
+
+    protected static function calculateTotal(callable $set, callable $get): void
+    {
+        $lot = (float) $get('lot_size');
+        $days = (int) $get('days');
+        $position = $get('position_type');
+
+        $swapRate = $position === 'Short'
+            ? (float) $get('swap_short')
+            : (float) $get('swap_long');
+
+        $set('total_swap', round($lot * $swapRate * $days, 2));
     }
 }

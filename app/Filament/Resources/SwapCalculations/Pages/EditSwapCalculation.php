@@ -18,4 +18,22 @@ class EditSwapCalculation extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $positionType = $data['position_type'];
+        if ($positionType === 'Long') {
+            $swapRate = $data['inputs']['swap_long'];
+        } else {
+            $swapRate = $data['inputs']['swap_short'];
+        }
+
+        $data['swap_rate'] = $swapRate;
+        $lotSize = $data['lot_size'];
+        $days = $data['days'];
+
+        $data['total_swap'] = $lotSize * $swapRate * $days;
+
+        return $data;
+    }
 }
