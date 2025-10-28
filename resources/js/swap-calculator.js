@@ -51,7 +51,7 @@ async function loadHistory() {
         <td>${h.days}</td>
         <td class="${h.total_swap < 0 ? 'text-red-400' : 'text-emerald-400'} font-medium">${fmtMoney(h.total_swap)}</td>
         <td>${h.created_at}</td>
-                <td><button data-id="${h.id}" class="del-btn text-red-400 hover:text-red-300 text-xs">${(window.SWAP_I18N && window.SWAP_I18N.deleteLabel) || 'Delete'}</button></td>
+                <td><button data-id="${h.id}" class="cursor-pointer del-btn text-red-400 hover:text-red-300 text-xs">${(window.SWAP_I18N && window.SWAP_I18N.deleteLabel) || 'Delete'}</button></td>
         </tr>
     `).join('');
 
