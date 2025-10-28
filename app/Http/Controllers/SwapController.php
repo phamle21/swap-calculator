@@ -34,7 +34,7 @@ class SwapController extends Controller
         // Apply locale from session if present so server-rendered strings are localized
         $locale = session('locale', config('app.locale'));
         App::setLocale($locale);
-        
+
         $dto = new SwapInputDTO(
             pair: $req->pair,
             lotSize: (float)$req->lot_size,
@@ -46,10 +46,13 @@ class SwapController extends Controller
             profileId: $req->profile_id
         );
 
-        $pairId = CurrencyPair::where('symbol', $dto->pair)->value('id');
-        if (!$pairId) {
+        $pair = CurrencyPair::find($dto->pair, ['id', 'symbol']);
+        if (!$pair) {
             return response()->json(['errors' => ['pair' => ['Pair not found']]], 422);
         }
+
+        $pairId = $pair->id;
+        $pairSymbol = $pair->symbol;
 
         $swapRate = $dto->chosenRate();
         $total    = $this->svc->calcTotal($dto->lotSize, $swapRate, $dto->days, $dto->crossWednesday, 3.0);
@@ -58,7 +61,8 @@ class SwapController extends Controller
 
         return response()->json([
             'result' => [
-                'pair'          => $dto->pair,
+                // return symbol (human-friendly) instead of numeric id
+                'pair'          => $pairSymbol,
                 'lot_size'      => $dto->lotSize,
                 'position_type' => $dto->positionType,
                 'swap_rate'     => $swapRate,
