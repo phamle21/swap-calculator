@@ -7,32 +7,27 @@ use App\Models\SwapCalculation;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Actions\Imports\Importer;
 use Filament\Actions\Imports\Models\Import;
+use Filament\Actions\Imports\Exceptions\RowImportFailedException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Number;
-use Illuminate\Validation\ValidationException;
 
 class SwapCalculationImporter extends Importer
 {
     protected static ?string $model = SwapCalculation::class;
 
-    /**
-     * Cấu hình cột cho màn hình map cột khi import.
-     * - Có thể map bằng 'currency_pair_id' hoặc 'pair' (EURUSD…)
-     * - 'swap_rate' có thể bỏ trống nếu đã có pair + position_type (sẽ suy ra)
-     * - 'total_swap' luôn được tính lại nên KHÔNG cần map
-     */
     public static function getColumns(): array
     {
         return [
+            // Either currency_pair_id or pair (symbol) must be present
             ImportColumn::make('currency_pair_id')
                 ->label('Currency Pair ID')
                 ->numeric()
-                ->rules(['nullable', 'integer', 'exists:currency_pairs,id']),
+                ->rules(['required_without:pair', 'integer', 'exists:currency_pairs,id']),
 
-            // Or map by symbol
+            // Lookup-only; will not be saved to DB
             ImportColumn::make('pair')
                 ->label('Currency Pair (symbol)')
-                ->rules(['nullable', 'string', 'max:10']),
+                ->rules(['required_without:currency_pair_id', 'string', 'max:10']),
 
             ImportColumn::make('lot_size')
                 ->numeric()
@@ -41,6 +36,7 @@ class SwapCalculationImporter extends Importer
             ImportColumn::make('position_type')
                 ->rules(['required', 'in:Long,Short,long,short']),
 
+            // Optional; auto-derived from CurrencyPair if empty
             ImportColumn::make('swap_rate')
                 ->numeric()
                 ->rules(['nullable', 'numeric']),
@@ -48,95 +44,93 @@ class SwapCalculationImporter extends Importer
             ImportColumn::make('days')
                 ->numeric()
                 ->rules(['required', 'integer', 'gt:0']),
+
+            // Optional boolean
+            ImportColumn::make('cross_wednesday')
+                ->rules(['nullable']),
         ];
     }
 
-    /**
-     * Always create a new record (can be changed to firstOrNew by a key if you want to update by key).
-     */
     public function resolveRecord(): SwapCalculation
     {
+        // Always insert new record per row
         return new SwapCalculation();
     }
 
-    /**
-     * Recompute total_swap and relation map before filling.
-     * Called by Importer routines in the order you gave them.
-     */
     protected function beforeFill(): void
     {
-        // Normalize input data
-        $data = $this->data;
+        // Normalize inputs
+        $id     = $this->data['currency_pair_id'] ?? null;
+        $symbol = isset($this->data['pair']) ? strtoupper(trim((string)$this->data['pair'])) : '';
 
-        // 1) Resolve currency_pair_id from either currency_pair_id or pair (symbol)
-        $currencyPairId = Arr::get($data, 'currency_pair_id');
-        $symbol = strtoupper(trim((string) (Arr::get($data, 'pair') ?? '')));
+        if (isset($this->data['position_type'])) {
+            // Normalize "Long"/"Short"
+            $this->data['position_type'] = ucfirst(strtolower((string)$this->data['position_type']));
+        }
 
-        $pairModel = null;
-
-        if ($currencyPairId) {
-            $pairModel = CurrencyPair::query()->find($currencyPairId);
-        } elseif ($symbol !== '') {
-            $pairModel = CurrencyPair::query()->where('symbol', $symbol)->first();
-            if ($pairModel) {
-                $currencyPairId = $pairModel->id;
-                $this->data['currency_pair_id'] = $currencyPairId;
+        // --- CRITICAL: Resolve pair by ID first, else by symbol. If neither, fail this row ---
+        if ($id) {
+            $pair = CurrencyPair::find($id);
+            if (! $pair) {
+                throw new RowImportFailedException("Row {$this->rowIndex()}: currency_pair_id={$id} does not exist.");
             }
+        } elseif ($symbol !== '') {
+            $pair = CurrencyPair::where('symbol', $symbol)->first();
+            if (! $pair) {
+                throw new RowImportFailedException("Row {$this->rowIndex()}: symbol '{$symbol}' not found.");
+            }
+            // Persist resolved ID for saving
+            $this->data['currency_pair_id'] = $pair->id;
+        } else {
+            throw new RowImportFailedException("Row {$this->rowIndex()}: missing currency_pair_id or pair (symbol).");
         }
 
-        if (! $currencyPairId || ! $pairModel) {
-            throw ValidationException::withMessages([
-                'currency_pair_id' => 'Invalid currency_pair_id or pair symbol.',
-            ]);
+        // Validate position_type
+        $pos = $this->data['position_type'] ?? 'Long';
+        if (!in_array($pos, ['Long', 'Short'], true)) {
+            throw new RowImportFailedException("Row {$this->rowIndex()}: position_type must be Long or Short.");
         }
 
-        // 2) Normalize position_type
-        $position = Arr::get($data, 'position_type');
-        $position = is_string($position) ? ucfirst(strtolower($position)) : 'Long';
-        if (! in_array($position, ['Long', 'Short'], true)) {
-            throw ValidationException::withMessages([
-                'position_type' => 'position_type must be Long or Short.',
-            ]);
-        }
-        $this->data['position_type'] = $position;
-
-        // 3) Determine swap_rate:
-        // - If the file already has a swap_rate, use it
-        // - If not, deduce it by position_type from currency_pairs: swap_long / swap_short
-        $swapRate = Arr::get($data, 'swap_rate');
-        if ($swapRate === null || $swapRate === '') {
-            $swapRate = $position === 'Short'
-                ? $pairModel->swap_short
-                : $pairModel->swap_long;
-            $this->data['swap_rate'] = $swapRate;
+        // Derive swap_rate from pair if missing
+        if (($this->data['swap_rate'] ?? '') === '' || $this->data['swap_rate'] === null) {
+            $this->data['swap_rate'] = $pos === 'Short' ? $pair->swap_short : $pair->swap_long;
         }
 
-        // 4) Calculate total_swap = lot_size * swap_rate * days
-        $lot   = (float) Arr::get($this->data, 'lot_size', 0);
-        $days  = (int)   Arr::get($this->data, 'days', 0);
-        $rate  = (float) $swapRate;
-
+        // Compute total_swap
+        $lot  = (float) ($this->data['lot_size'] ?? 0);
+        $days = (int)   ($this->data['days'] ?? 0);
+        $rate = (float) ($this->data['swap_rate'] ?? 0);
         $this->data['total_swap'] = round($lot * $rate * $days, 2);
+
+        // Do not save lookup column
+        unset($this->data['pair']);
+
+        // Normalize optional boolean
+        if (array_key_exists('cross_wednesday', $this->data)) {
+            $this->data['cross_wednesday'] = (bool) $this->data['cross_wednesday'];
+        }
     }
 
-    /**
-     * Recalculate one last time right before save to ensure correct calculation if there are changes after beforeFill.
-     */
     protected function beforeSave(): void
     {
-        if (! $this->record) {
-            return;
+        // --- CRITICAL: Ensure currency_pair_id is present after resolution ---
+        $finalId = $this->data['currency_pair_id'] ?? $this->record->currency_pair_id ?? null;
+        if (empty($finalId)) {
+            throw new RowImportFailedException(
+                "Row {$this->rowIndex()}: missing currency_pair_id after resolution."
+            );
         }
-
+        $this->record->currency_pair_id = (int) $finalId;
+        // Recompute total to be safe before persisting
         $lot  = (float) Arr::get($this->data, 'lot_size', $this->record->lot_size ?? 0);
         $days = (int)   Arr::get($this->data, 'days', $this->record->days ?? 0);
         $rate = (float) Arr::get($this->data, 'swap_rate', $this->record->swap_rate ?? 0);
-
         $this->record->total_swap = round($lot * $rate * $days, 2);
     }
 
     public static function getCompletedNotificationBody(Import $import): string
     {
+        // Summary notification
         $body = 'Your swap calculation import has completed and '
             . Number::format($import->successful_rows) . ' '
             . str('row')->plural($import->successful_rows) . ' imported.';
@@ -147,5 +141,15 @@ class SwapCalculationImporter extends Importer
         }
 
         return $body;
+    }
+
+    /** Helpers */
+
+    protected function rowIndex(): int
+    {
+        // Approximate 1-based row index for user-friendly error messages
+        return (int) $this->import->successful_rows
+            + (int) $this->import->getFailedRowsCount()
+            + 1;
     }
 }
