@@ -14,7 +14,6 @@ class SwapCalculationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // return parent::toArray($request);
         return [
             'id'            => $this->id,
             'pair'          => $this->whenLoaded('pair', fn() => $this->pair->symbol, $this->pair),
