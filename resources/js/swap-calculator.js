@@ -183,6 +183,37 @@ function renderFilterTags() {
     };
 }
 
+function toggleSwapInputs() {
+    try {
+        const pos = document.querySelector('input[name="position_type"]:checked')?.value || 'Long';
+        const longInput = $('#swap_long');
+        const shortInput = $('#swap_short');
+        if (pos === 'Long') {
+            if (longInput) {
+                longInput.removeAttribute('disabled');
+                longInput.classList.remove('opacity-50');
+                longInput.setAttribute('aria-disabled', 'false');
+            }
+            if (shortInput) {
+                shortInput.setAttribute('disabled', 'disabled');
+                shortInput.classList.add('opacity-50');
+                shortInput.setAttribute('aria-disabled', 'true');
+            }
+        } else {
+            if (shortInput) {
+                shortInput.removeAttribute('disabled');
+                shortInput.classList.remove('opacity-50');
+                shortInput.setAttribute('aria-disabled', 'false');
+            }
+            if (longInput) {
+                longInput.setAttribute('disabled', 'disabled');
+                longInput.classList.add('opacity-50');
+                longInput.setAttribute('aria-disabled', 'true');
+            }
+        }
+    } catch (e) { /* ignore */ }
+}
+
 async function onSubmit(e) {
     e.preventDefault();
     clearValidationErrors();
@@ -235,19 +266,22 @@ function clientValidateForm() {
         errors.lot_size = [ getMsg('positive', (window.SWAP_I18N && window.SWAP_I18N.lotLabel) || 'Lot size') ];
     }
 
-    // swap rates (allow negative, but must be numeric)
+    // swap rates (only validate the one used by selected position)
+    const selectedPos = document.querySelector('input[name="position_type"]:checked')?.value;
     const sLong = $('#swap_long')?.value;
-    if (sLong === undefined || sLong === null || String(sLong).trim() === '') {
-        errors.swap_long = [ getMsg('required', (window.SWAP_I18N && window.SWAP_I18N.swapLongLabel) || 'Swap Long') ];
-    } else if (!isFinite(Number(sLong))) {
-        errors.swap_long = [ getMsg('numeric', (window.SWAP_I18N && window.SWAP_I18N.swapLongLabel) || 'Swap Long') ];
-    }
-
     const sShort = $('#swap_short')?.value;
-    if (sShort === undefined || sShort === null || String(sShort).trim() === '') {
-        errors.swap_short = [ getMsg('required', (window.SWAP_I18N && window.SWAP_I18N.swapShortLabel) || 'Swap Short') ];
-    } else if (!isFinite(Number(sShort))) {
-        errors.swap_short = [ getMsg('numeric', (window.SWAP_I18N && window.SWAP_I18N.swapShortLabel) || 'Swap Short') ];
+    if (selectedPos === 'Long') {
+        if (sLong === undefined || sLong === null || String(sLong).trim() === '') {
+            errors.swap_long = [ getMsg('required', (window.SWAP_I18N && window.SWAP_I18N.swapLongLabel) || 'Swap Long') ];
+        } else if (!isFinite(Number(sLong))) {
+            errors.swap_long = [ getMsg('numeric', (window.SWAP_I18N && window.SWAP_I18N.swapLongLabel) || 'Swap Long') ];
+        }
+    } else if (selectedPos === 'Short') {
+        if (sShort === undefined || sShort === null || String(sShort).trim() === '') {
+            errors.swap_short = [ getMsg('required', (window.SWAP_I18N && window.SWAP_I18N.swapShortLabel) || 'Swap Short') ];
+        } else if (!isFinite(Number(sShort))) {
+            errors.swap_short = [ getMsg('numeric', (window.SWAP_I18N && window.SWAP_I18N.swapShortLabel) || 'Swap Short') ];
+        }
     }
 
     // days
@@ -390,6 +424,14 @@ function boot() {
     if (filterMax) filterMax.onchange = () => { window.__historyPage = 1; loadHistory(); };
     const perPageSelect = $('#perPage');
     if (perPageSelect) perPageSelect.onchange = () => { window.__historyPage = 1; loadHistory(); };
+
+    // position radio change: toggle which swap input is active
+    const posRadios = document.querySelectorAll('input[name="position_type"]');
+    if (posRadios && posRadios.length) {
+        posRadios.forEach(r => r.addEventListener('change', () => { toggleSwapInputs(); }));
+        // set initial state
+        toggleSwapInputs();
+    }
 
     const clearBtn = $('#clearHistory');
     if (clearBtn) clearBtn.onclick = async () => {

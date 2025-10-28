@@ -24,8 +24,10 @@ class SwapCalculateRequest extends FormRequest
         return [
             'pair'             => ['required', 'string', 'max:20'],
             'lot_size'         => ['required', 'numeric', 'gt:0'],
-            'swap_long'        => ['required', 'numeric'],
-            'swap_short'       => ['required', 'numeric'],
+            // Only require the swap rate that corresponds to the chosen position
+            // If position_type == Long -> swap_long required; if Short -> swap_short required
+            'swap_long'        => ['nullable', 'numeric', 'required_if:position_type,Long'],
+            'swap_short'       => ['nullable', 'numeric', 'required_if:position_type,Short'],
             'position_type'    => ['required', 'in:Long,Short'],
             'days'             => ['required', 'integer', 'gt:0'],
             'cross_wednesday'  => ['nullable', 'boolean'],
@@ -48,6 +50,10 @@ class SwapCalculateRequest extends FormRequest
             'pair.required' => 'Pair is required.',
             'lot_size.gt'   => 'Lot size must be greater than 0.',
             'days.gt'       => 'Days must be greater than 0.',
+            'swap_long.required_if' => 'Swap Long rate is required when Position is Long.',
+            'swap_short.required_if' => 'Swap Short rate is required when Position is Short.',
+            'swap_long.numeric' => 'Swap Long must be a valid number.',
+            'swap_short.numeric' => 'Swap Short must be a valid number.',
         ];
     }
 }
