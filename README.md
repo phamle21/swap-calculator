@@ -12,7 +12,7 @@ The system validates inputs, performs instant AJAX calculations, stores results 
 - **PHP Version:** ≥ 8.2  
 - **Database:** MySQL / MariaDB  
 - **Frontend:** Blade + TailwindCSS + Fetch API  
-- **Architecture:** MVC + Service Layer Pattern  
+- **Architecture:** MVC + Service–Repository–DTO Pattern  
 - **License:** MIT  
 
 ---
@@ -77,7 +77,7 @@ php artisan optimize:clear
 - Calculate **Total Swap** based on the formula:  
   `Total Swap = Lot Size × Swap Rate × Holding Days`
 - Select **Long or Short** position (swap direction changes automatically)
-- Instant validation and calculation (via AJAX)
+- Instant validation and calculation (via Fetch API)
 - Save every calculation to the database (`swap_calculations` table)
 - Display **calculation history** with filters, pagination, and delete actions
 - Built with clean separation of logic using **DTO, Service, and Repository layers**
@@ -113,9 +113,8 @@ The project includes **Filament Admin (v4)** for data management:
 
 ## 6️⃣ Advanced Architecture
 
-This project follows a **modular and extensible structure** with clear separation of layers:
-**Controller → DTO → Service → Repository → Model**.  
-It demonstrates architectural thinking suitable for scalable Laravel applications.
+This project follows a **Service–Repository–DTO architecture** within the Laravel ecosystem.  
+Each layer is independent and testable, ensuring clean separation of concerns and maintainability.
 
 ### 🧱 `app/DTOs`
 - **`SwapInputDTO.php`**  
@@ -126,8 +125,9 @@ It demonstrates architectural thinking suitable for scalable Laravel application
 
 ### ⚙️ `app/Http`
 - **`Controllers/SwapController.php`**  
-  Handles user requests (via form or AJAX), delegates business logic to `SwapService`, and returns the calculated result or view.  
-  Contains no business logic — acts purely as an orchestrator.
+  Handles both web form submissions and AJAX requests.  
+  Uses the `SwapService` to compute total swap, then returns JSON or Blade responses.  
+  Designed to support both synchronous and asynchronous calculation workflows.
 
 - **`Requests/SwapCalculateRequest.php`**  
   Defines Laravel validation rules ensuring data integrity (e.g. positive lot size, valid position type, integer days).
@@ -153,8 +153,8 @@ It demonstrates architectural thinking suitable for scalable Laravel application
   Simplifies data access and allows easy mocking in tests.
 
 - **`SwapRateRepository.php`**  
-  Provides access to swap rate sources or `currency_pairs` data.  
-  Encapsulates rate-fetching logic to decouple from the service layer.
+  Responsible for retrieving swap rates (long/short) for each currency pair.  
+  Provides a unified interface for the service layer to access rate data from the database or external sources.
 
 ---
 
@@ -168,6 +168,15 @@ It demonstrates architectural thinking suitable for scalable Laravel application
 ### ⚙️ `app/Providers`
 - Service providers for dependency binding or registering additional layers when scaling.  
   Currently optional but ready for future DI or event bootstrapping.
+
+---
+
+## ✳️ Code Style and Principles
+
+- PSR-12 compliant, using strict typing (`declare(strict_types=1)`).
+- Service and Repository layers are dependency-injected for testability.
+- DTOs ensure immutable and type-safe data transfer.
+- Comments follow Laravel docblock conventions.
 
 ---
 
