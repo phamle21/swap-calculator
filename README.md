@@ -58,3 +58,20 @@ php artisan optimize
 # (Use this when deploying or running in production)
 # To clear caches after updating code/config:
 php artisan optimize:clear
+
+# 🧮 Core Functionality
+- Calculate Total Swap based on the formula:
+- Total Swap = Lot Size × Swap Rate × Holding Days
+- Select Long or Short position (swap direction changes automatically)
+- Instant validation and calculation (via AJAX)
+- Save every calculation to the database (swap_calculations table)
+- Display calculation history with filters, pagination, and delete actions
+- Built with clean separation of logic using DTO, Service, and Repository layers
+
+# 🖥️ Admin Panel (Filament)
+
+The project includes Filament Admin (v4) for data management:
+- Manage swap calculation history (CRUD)
+- Import/Export CSV data
+- Auto-calculate total_swap when importing
+- Optional: create CurrencyPairResource to manage default swap rates
