@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\App;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +22,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Ensure application locale is set from session on every request so
+        // translations loaded in Blade reflect the user's selected language.
+        $locale = session('locale', config('app.locale'));
+        App::setLocale($locale);
     }
 }

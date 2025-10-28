@@ -19,22 +19,22 @@
         @stack("styles")
     </head>
 
-    <body class="min-h-screen bg-gray-50 antialiased">
-        <header class="border-b border-white/10">
-            <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-6">
-                <div class="grid h-10 w-10 place-items-center rounded-xl bg-blue-500/20 ring-1 ring-white/10">
-                    <span class="text-xl">₹</span>
-                </div>
-                <div>
-                    <h1 class="text-2xl font-semibold">Swap Calculator</h1>
-                    <p class="text-sm text-slate-400">Forex Overnight Fee Calculator</p>
-                </div>
-                <div class="ms-auto text-sm text-slate-400">
-                    {{ now()->format("Y-m-d H:i") }}
+    <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-12 py-6">
+        <!-- Header -->
+        <div class="mb-12 flex items-center gap-4">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600 text-2xl font-bold text-white">₹</div>
+            <div>
+                <h1 class="text-2xl font-semibold text-white">{{ __("layout.brand_title") }}</h1>
+                <p class="text-sm text-slate-400">{{ __("layout.brand_subtitle") }}</p>
+            </div>
+            <div class="ms-auto flex items-center gap-3">
+                <div class="flex items-center gap-3">
+                    <a class="{{ app()->getLocale() === "en" ? "underline" : "" }} text-sm font-medium text-slate-400 hover:text-slate-600" href="{{ route("lang.switch", "en") }}">EN</a>
+                    <a class="{{ app()->getLocale() === "vi" ? "underline" : "" }} text-sm font-medium text-slate-400 hover:text-slate-600" href="{{ route("lang.switch", "vi") }}">VI</a>
                 </div>
             </div>
-        </header>
-        
+        </div>
+
         <!-- Main Content -->
         <main>
             @yield("content")

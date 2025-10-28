@@ -8,6 +8,7 @@ use App\Http\Resources\SwapCalculationResource;
 use App\Models\CurrencyPair;
 use App\Repositories\SwapCalculationRepository;
 use App\Services\SwapService;
+use Illuminate\Support\Facades\App;
 
 class SwapController extends Controller
 {
@@ -18,6 +19,10 @@ class SwapController extends Controller
 
     public function index()
     {
+        // Apply locale from session if present so server-rendered strings are localized
+        $locale = session('locale', config('app.locale'));
+        App::setLocale($locale);
+
         $pairs = CurrencyPair::active()->orderBy('symbol')->get(['id', 'symbol']);
         return view('swap-calculator', compact('pairs'));
     }
@@ -54,8 +59,8 @@ class SwapController extends Controller
                 'days'          => $dto->days,
                 'total_swap'    => $total,
                 'message'       => $total < 0
-                    ? 'Swap âm, cân nhắc không nên giữ lệnh lâu.'
-                    : 'Swap dương, có thể xem xét giữ lệnh.',
+                    ? __('swap_results.advice_negative')
+                    : __('swap_results.advice_positive'),
             ],
             'row' => new SwapCalculationResource($row->load('pair:id,symbol')),
         ]);
