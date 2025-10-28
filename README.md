@@ -51,12 +51,11 @@ Visit: https://test-swap-calculator.2etitb.easypanel.host/
 
 ---
 
-### ⚡ Optional: Optimize for better performance
-# Generate cache files for routes, config, and views
+# ⚡ Optional: Optimize for better performance
+#### Generate cache files for routes, config, and views
 php artisan optimize
 
-# (Use this when deploying or running in production)
-# To clear caches after updating code/config:
+#### To clear caches after updating code/config:
 php artisan optimize:clear
 
 # 🧮 Core Functionality
