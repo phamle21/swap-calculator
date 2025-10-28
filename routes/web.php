@@ -10,6 +10,9 @@ Route::post('/calculate', [SwapController::class, 'calculate'])->name('swap.calc
 Route::get('/history', [SwapController::class, 'history'])->name('swap.history');
 Route::delete('/history/{id}', [SwapController::class, 'destroy'])->name('swap.destroy');
 
+// Clear all history
+Route::delete('/history', [SwapController::class, 'clear'])->name('swap.clear');
+
 // Simple language switcher: store locale in session and redirect back
 Route::get('/lang/{lang}', function (Request $request, $lang) {
 	$allowed = ['en', 'vi'];

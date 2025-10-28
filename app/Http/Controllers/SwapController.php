@@ -24,11 +24,17 @@ class SwapController extends Controller
         App::setLocale($locale);
 
         $pairs = CurrencyPair::active()->orderBy('symbol')->get(['id', 'symbol']);
-        return view('swap-calculator', compact('pairs'));
+        $history = $this->calcRepo->recent(10);
+
+        return view('swap-calculator', compact('pairs', 'history'));
     }
 
     public function calculate(SwapCalculateRequest $req)
     {
+        // Apply locale from session if present so server-rendered strings are localized
+        $locale = session('locale', config('app.locale'));
+        App::setLocale($locale);
+        
         $dto = new SwapInputDTO(
             pair: $req->pair,
             lotSize: (float)$req->lot_size,
@@ -66,10 +72,29 @@ class SwapController extends Controller
         ]);
     }
 
-    public function history()
+    public function history(\Illuminate\Http\Request $request)
     {
-        $items = $this->calcRepo->recent(20);
-        return response()->json(['items' => SwapCalculationResource::collection($items)]);
+        $filters = [
+            'pair' => $request->query('pair'),
+            'position_type' => $request->query('position_type'),
+            'date_from' => $request->query('date_from'),
+            'date_to' => $request->query('date_to'),
+            'min_total' => $request->query('min_total'),
+            'max_total' => $request->query('max_total'),
+        ];
+
+        $perPage = (int) max(1, min(100, $request->query('per_page', 10)));
+
+        $paginator = $this->calcRepo->search(array_filter($filters, function ($v) { return $v !== null && $v !== ''; }), $perPage);
+
+        // Return a resource collection which includes pagination meta
+        return SwapCalculationResource::collection($paginator);
+    }
+
+    public function clear()
+    {
+        $ok = $this->calcRepo->deleteAll();
+        return response()->json(['ok' => $ok]);
     }
 
     public function destroy(int $id)

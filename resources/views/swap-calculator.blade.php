@@ -17,13 +17,27 @@
 
             <!-- History Card -->
             <div class="rounded-lg border border-slate-700 bg-slate-800 p-6">
-                @include("components.swap-history", ["history" => $history ?? []])
+                @include("components.swap-history", ["history" => $history ?? [], 'pairs' => $pairs ?? []])
             </div>
         </div>
     </div>
 @endsection
 
 @push("scripts")
-    <script src="{{ asset("js/swap-calculator.js") }}" defer></script>
+    <script>
+        window.SWAP_I18N = {
+            confirmDelete: {!! json_encode(__('swap_history.confirm_delete')) !!},
+            confirmClear: {!! json_encode(__('swap_history.confirm_clear')) !!},
+            confirmYes: {!! json_encode(__('swap_history.confirm_yes')) !!},
+            confirmNo: {!! json_encode(__('swap_history.confirm_no')) !!},
+            deletedSuccess: {!! json_encode(__('swap_history.deleted_success')) !!},
+            deletedCanceled: {!! json_encode(__('swap_history.deleted_canceled')) !!},
+            deleteLabel: {!! json_encode(__('swap_history.delete_label')) !!},
+            pagePrev: {!! json_encode(__('swap_history.page_prev')) !!},
+            pageNext: {!! json_encode(__('swap_history.page_next')) !!},
+            allLabel: {!! json_encode(__('swap_history.all_label')) !!}
+        };
+    </script>
+    <script src="{{ asset('js/swap-calculator.js') }}" defer></script>
     @vite(["resources/js/swap-calculator.js"])
 @endpush

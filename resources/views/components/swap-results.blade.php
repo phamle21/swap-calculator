@@ -29,7 +29,7 @@
         </div>
     </div>
 
-    <div id="advise" class="hidden rounded-lg border border-red-700 bg-red-900/30 p-4">
-        <span class="text-sm text-red-300"></span>
+    <div id="advise" class="hidden rounded-lg border p-4">
+        <span class="text-sm"></span>
     </div>
 </div>

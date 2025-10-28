@@ -48,3 +48,9 @@
     color: var(--text-secondary);
     font-size: 14px;
 }
+
+
+/* Table History */
+#historyBody td, #historyBody th {
+    @apply text-center;
+}
