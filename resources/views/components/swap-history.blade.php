@@ -88,14 +88,14 @@
     <table class="w-full text-sm">
         <thead>
                 <tr class="border-b border-slate-700 text-slate-400">
-                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">{{ __('swap_history.th_pair') }}</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">{{ __('swap_history.th_lot') }}</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">{{ __('swap_history.th_type') }}</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">{{ __('swap_history.th_swap_rate') }}</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">{{ __('swap_history.th_days') }}</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold uppercase">{{ __('swap_history.th_total_swap') }}</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">{{ __('swap_history.th_time') }}</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold uppercase">{{ __('swap_history.th_action') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase">{{ __('swap_history.th_pair') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase">{{ __('swap_history.th_lot') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase">{{ __('swap_history.th_type') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase">{{ __('swap_history.th_swap_rate') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase">{{ __('swap_history.th_days') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase">{{ __('swap_history.th_total_swap') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase">{{ __('swap_history.th_time') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase">{{ __('swap_history.th_action') }}</th>
             </tr>
         </thead>
         <tbody id="historyBody" class="text-white">

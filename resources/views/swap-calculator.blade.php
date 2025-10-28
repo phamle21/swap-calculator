@@ -35,9 +35,17 @@
             deleteLabel: {!! json_encode(__('swap_history.delete_label')) !!},
             pagePrev: {!! json_encode(__('swap_history.page_prev')) !!},
             pageNext: {!! json_encode(__('swap_history.page_next')) !!},
-            allLabel: {!! json_encode(__('swap_history.all_label')) !!}
+            allLabel: {!! json_encode(__('swap_history.all_label')) !!},
+            // form validation messages (from swap_form.php)
+            swapFormValidation: {!! json_encode(__('swap_form.validation')) !!},
+            // labels used by client-side validator
+            pairLabel: {!! json_encode(__('swap_form.currency_pair')) !!},
+            lotLabel: {!! json_encode(__('swap_form.lot_size')) !!},
+            swapLongLabel: {!! json_encode(__('swap_form.swap_long')) !!},
+            swapShortLabel: {!! json_encode(__('swap_form.swap_short')) !!},
+            daysLabel: {!! json_encode(__('swap_form.holding_days')) !!},
+            positionLabel: {!! json_encode(__('swap_form.position_type')) !!}
         };
     </script>
-    <script src="{{ asset('js/swap-calculator.js') }}" defer></script>
     @vite(["resources/js/swap-calculator.js"])
 @endpush

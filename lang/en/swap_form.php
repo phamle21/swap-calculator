@@ -12,4 +12,10 @@ return [
     'short' => 'Short',
     'holding_days' => 'Holding Days',
     'calculate_button' => 'Calculate Swap',
+    'validation' => [
+        'required' => 'The :attribute field is required.',
+        'numeric' => 'The :attribute must be a valid number.',
+        'positive' => 'The :attribute must be greater than 0.',
+        'position' => 'Position type must be Long or Short.',
+    ],
 ];

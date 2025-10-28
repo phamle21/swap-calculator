@@ -12,4 +12,10 @@ return [
     'short' => 'Short',
     'holding_days' => 'Số ngày giữ',
     'calculate_button' => 'Tính Swap',
+    'validation' => [
+        'required' => 'Trường :attribute là bắt buộc.',
+        'numeric' => ':attribute phải là số hợp lệ.',
+        'positive' => ':attribute phải lớn hơn 0.',
+        'position' => 'Loại vị thế phải là Long hoặc Short.',
+    ],
 ];

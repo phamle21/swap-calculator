@@ -185,6 +185,12 @@ function renderFilterTags() {
 
 async function onSubmit(e) {
     e.preventDefault();
+    clearValidationErrors();
+    const clientErrors = clientValidateForm();
+    if (clientErrors && Object.keys(clientErrors).length) {
+        showValidationErrors(clientErrors);
+        return;
+    }
     const fd = new FormData(e.target);
     try {
         const data = await api('/calculate', { method: 'POST', body: fd });
@@ -192,7 +198,174 @@ async function onSubmit(e) {
         await loadHistory();
     } catch (err) {
         console.error(err);
-        alert('Lỗi: ' + JSON.stringify(err.errors || err));
+        clearValidationErrors();
+        if (err && err.errors) {
+            showValidationErrors(err.errors);
+        } else {
+            alert('Lỗi: ' + JSON.stringify(err));
+        }
+    }
+}
+
+function clientValidateForm() {
+    const t = (window.SWAP_I18N && window.SWAP_I18N.swapFormValidation) || {};
+    const errors = {};
+
+    const getMsg = (key, attr) => {
+        const map = {
+            required: t.required || 'This field is required.',
+            numeric: t.numeric || 'Must be a valid number.',
+            positive: t.positive || 'Must be greater than 0.',
+            position: t.position || 'Position must be Long or Short.'
+        };
+        return (map[key] || '').replace(':attribute', attr || 'Field');
+    };
+
+    // pair
+    const pair = $('#pair')?.value?.trim() || '';
+    if (!pair) errors.pair = [ getMsg('required', (window.SWAP_I18N && window.SWAP_I18N.pairLabel) || 'Pair') ];
+
+    // lot_size
+    const lot = $('#lot_size')?.value;
+    if (lot === undefined || lot === null || String(lot).trim() === '') {
+        errors.lot_size = [ getMsg('required', (window.SWAP_I18N && window.SWAP_I18N.lotLabel) || 'Lot size') ];
+    } else if (!isFinite(Number(lot))) {
+        errors.lot_size = [ getMsg('numeric', (window.SWAP_I18N && window.SWAP_I18N.lotLabel) || 'Lot size') ];
+    } else if (Number(lot) <= 0) {
+        errors.lot_size = [ getMsg('positive', (window.SWAP_I18N && window.SWAP_I18N.lotLabel) || 'Lot size') ];
+    }
+
+    // swap rates (allow negative, but must be numeric)
+    const sLong = $('#swap_long')?.value;
+    if (sLong === undefined || sLong === null || String(sLong).trim() === '') {
+        errors.swap_long = [ getMsg('required', (window.SWAP_I18N && window.SWAP_I18N.swapLongLabel) || 'Swap Long') ];
+    } else if (!isFinite(Number(sLong))) {
+        errors.swap_long = [ getMsg('numeric', (window.SWAP_I18N && window.SWAP_I18N.swapLongLabel) || 'Swap Long') ];
+    }
+
+    const sShort = $('#swap_short')?.value;
+    if (sShort === undefined || sShort === null || String(sShort).trim() === '') {
+        errors.swap_short = [ getMsg('required', (window.SWAP_I18N && window.SWAP_I18N.swapShortLabel) || 'Swap Short') ];
+    } else if (!isFinite(Number(sShort))) {
+        errors.swap_short = [ getMsg('numeric', (window.SWAP_I18N && window.SWAP_I18N.swapShortLabel) || 'Swap Short') ];
+    }
+
+    // days
+    const days = $('#days')?.value;
+    if (days === undefined || days === null || String(days).trim() === '') {
+        errors.days = [ getMsg('required', (window.SWAP_I18N && window.SWAP_I18N.daysLabel) || 'Days') ];
+    } else if (!isFinite(Number(days))) {
+        errors.days = [ getMsg('numeric', (window.SWAP_I18N && window.SWAP_I18N.daysLabel) || 'Days') ];
+    } else if (Number(days) <= 0) {
+        errors.days = [ getMsg('positive', (window.SWAP_I18N && window.SWAP_I18N.daysLabel) || 'Days') ];
+    }
+
+    // position_type
+    const pos = document.querySelector('input[name="position_type"]:checked')?.value;
+    if (!pos) {
+        errors.position_type = [ getMsg('required', (window.SWAP_I18N && window.SWAP_I18N.positionLabel) || 'Position') ];
+    } else if (!(pos === 'Long' || pos === 'Short')) {
+        errors.position_type = [ getMsg('position') ];
+    }
+
+    return errors;
+}
+
+function clearValidationErrors() {
+    // hide all error containers
+    document.querySelectorAll('[data-error-for]').forEach(el => {
+        el.classList.add('hidden');
+        el.textContent = '';
+    });
+    // remove error class from inputs
+    ['pair','lot_size','swap_long','swap_short','position_type','days'].forEach(k => {
+        const inp = document.getElementById(k) || document.querySelector(`[name="${k}"]`);
+        if (inp) inp.classList.remove('border-red-500');
+        // for radio group, remove on all radios
+        const radios = document.querySelectorAll(`[name="${k}"]`);
+        radios.forEach(r => r.classList.remove('border-red-500'));
+    });
+    // remove ring/highlight from visible radio spans
+    const posSpans = document.querySelectorAll('#pos_long + span, #pos_short + span');
+    posSpans.forEach(s => s.classList.remove('ring-2', 'ring-red-500', 'border-red-500'));
+}
+
+function showValidationErrors(errors) {
+    // errors is an object where values are arrays of messages
+    let firstFocus = null;
+    const alias = {
+        holding_days: 'days',
+        holdingDays: 'days'
+    };
+
+    for (const key in errors) {
+        if (!errors.hasOwnProperty(key)) continue;
+        const msgs = Array.isArray(errors[key]) ? errors[key] : [errors[key]];
+        const tryKeys = [key];
+        if (alias[key]) tryKeys.push(alias[key]);
+        // also try replacing '.' nested keys
+        if (key.indexOf('.') !== -1) tryKeys.push(key.split('.')[0]);
+
+        let placed = false;
+        for (const tk of tryKeys) {
+            let container = document.querySelector(`[data-error-for="${tk}"]`);
+            const inp = document.getElementById(tk) || document.querySelector(`[name="${tk}"]`);
+
+            // If container not present, create it dynamically and insert after the input or its parent
+            if (!container) {
+                if (inp) {
+                    container = document.createElement('p');
+                    container.setAttribute('data-error-for', tk);
+                    container.className = 'mt-1 text-sm text-red-400';
+                    // insert after input (for radios, insert after the group container)
+                    if (inp.type === 'radio') {
+                        const group = inp.closest('div') || inp.parentElement;
+                        if (group && group.parentElement) group.parentElement.insertBefore(container, group.nextSibling);
+                        else inp.parentElement.insertBefore(container, inp.nextSibling);
+                    } else {
+                        const parent = inp.parentElement || inp.closest('div') || inp;
+                        if (parent && parent.parentElement) parent.parentElement.insertBefore(container, parent.nextSibling);
+                        else inp.insertAdjacentElement('afterend', container);
+                    }
+                } else {
+                    // fallback: try to find a label with for=tk and insert after that label
+                    const lbl = document.querySelector(`label[for="${tk}"]`) || document.querySelector(`label:contains("${tk}")`);
+                    if (lbl && lbl.parentElement) {
+                        container = document.createElement('p');
+                        container.setAttribute('data-error-for', tk);
+                        container.className = 'mt-1 text-sm text-red-400';
+                        lbl.parentElement.insertBefore(container, lbl.nextSibling);
+                    }
+                }
+            }
+
+            if (container) {
+                container.textContent = msgs.join(' ');
+                container.classList.remove('hidden');
+                // highlight input
+                if (inp) inp.classList.add('border-red-500');
+                // for radio groups, mark visible spans
+                if (tk === 'position_type') {
+                    const p1 = document.getElementById('pos_long');
+                    const p2 = document.getElementById('pos_short');
+                    if (p1 && p1.nextElementSibling) p1.nextElementSibling.classList.add('ring-2', 'ring-red-500');
+                    if (p2 && p2.nextElementSibling) p2.nextElementSibling.classList.add('ring-2', 'ring-red-500');
+                }
+                // determine focus element
+                const focusEl = inp || document.querySelector(`[name="${tk}"]`);
+                if (!firstFocus && focusEl) firstFocus = focusEl;
+                placed = true;
+                break;
+            }
+        }
+        if (!placed) {
+            // fallback: show alert for unexpected errors
+            console.warn('Unplaced validation error', key, msgs);
+        }
+    }
+
+    if (firstFocus) {
+        try { firstFocus.focus(); } catch (e) { /* ignore */ }
     }
 }
 

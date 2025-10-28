@@ -7,7 +7,7 @@
         <!-- Currency Pair -->
         <div>
             <label class="mb-2 block text-sm font-medium text-slate-300">{{ __('swap_form.currency_pair') }}</label>
-            <select id="pair" name="pair" class="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" required>
+            <select id="pair" name="pair" class="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
                 <option value="">{{ __('swap_form.select_pair') }}</option>
                 <option value="EURUSD" {{ old("pair") == "EURUSD" ? "selected" : "" }}>EURUSD</option>
                 <option value="GBPUSD" {{ old("pair") == "GBPUSD" ? "selected" : "" }}>GBPUSD</option>
@@ -27,7 +27,6 @@
                 type="number"
                 value="{{ old("lot_size", "1") }}"
                 step="0.1"
-                min="0.1"
                 placeholder="1"
                 required
             >
@@ -43,7 +42,6 @@
                 value="{{ old("swap_long", "-3.5") }}"
                 step="0.1"
                 placeholder="-3.5"
-                required
             >
         </div>
 
@@ -57,7 +55,6 @@
                 value="{{ old("swap_short", "-1.5") }}"
                 step="0.1"
                 placeholder="-1.5"
-                required
             >
         </div>
 
@@ -84,7 +81,6 @@
                 name="days"
                 type="number"
                 value="{{ old("holding_days", "1") }}"
-                min="1"
                 placeholder="1"
                 required
             >
