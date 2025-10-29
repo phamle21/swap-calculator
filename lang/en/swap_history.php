@@ -32,4 +32,6 @@ return [
     'apply' => 'Apply',
     'reset' => 'Reset',
     'filter' => 'Filter',
+    'search' => 'Search',
+    'search_placeholder' => 'pair symbol or type',
 ];

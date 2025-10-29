@@ -5,6 +5,29 @@ const CSRF = $('meta[name="csrf-token"]')?.content || '';
 const fmtMoney = n =>
     (n < 0 ? '-$' : '$') + Math.abs(Number(n || 0)).toFixed(2);
 
+// Return an array representing page buttons to show.
+// Example: getPageList(10, 20, 7) -> [1, '...', 8,9,10,11,12, '...', 20]
+function getPageList(current, last, maxButtons = 7) {
+    const pages = [];
+    if (last <= maxButtons) {
+        for (let i = 1; i <= last; i++) pages.push(i);
+        return pages;
+    }
+
+    const side = Math.floor((maxButtons - 3) / 2); // pages around current
+    const left = Math.max(2, current - side);
+    const right = Math.min(last - 1, current + side);
+
+    pages.push(1);
+    if (left > 2) pages.push('...');
+
+    for (let i = left; i <= right; i++) pages.push(i);
+
+    if (right < last - 1) pages.push('...');
+    pages.push(last);
+    return pages;
+}
+
 async function api(url, opts = {}) {
     const init = {
         headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
@@ -19,6 +42,7 @@ async function loadHistory() {
     // build query from filters and pagination state
     const params = new URLSearchParams();
     const filterPair = $('#filterPair') ? $('#filterPair').value : '';
+    const filterQ = $('#filterQ') ? $('#filterQ').value.trim() : '';
     const filterType = $('#filterType') ? $('#filterType').value : '';
     const filterFrom = $('#filterFrom') ? $('#filterFrom').value : '';
     const filterTo = $('#filterTo') ? $('#filterTo').value : '';
@@ -28,6 +52,7 @@ async function loadHistory() {
     const page = window.__historyPage || 1;
 
     if (filterPair) params.set('pair', filterPair);
+    if (filterQ) params.set('q', filterQ);
     if (filterType) params.set('position_type', filterType);
     if (filterFrom) params.set('date_from', filterFrom);
     if (filterTo) params.set('date_to', filterTo);
@@ -82,19 +107,41 @@ async function loadHistory() {
             const last = meta.last_page || meta.lastPage || (meta.total ? Math.ceil((meta.total || 0) / (meta.per_page || meta.perPage || 10)) : 1);
             const prevLabel = (window.SWAP_I18N && window.SWAP_I18N.pagePrev) || 'Prev';
             const nextLabel = (window.SWAP_I18N && window.SWAP_I18N.pageNext) || 'Next';
+            // Build numbered pager with ellipsis when appropriate
+            const list = getPageList(cur, last, 7);
+            const buttons = list.map(p => {
+                if (p === '...') return `<span class="px-2 py-1 text-slate-400">${p}</span>`;
+                const active = p === cur ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600';
+                return `<button data-page="${p}" class="cursor-pointer px-2 py-1 rounded ${active}">${p}</button>`;
+            }).join('');
+
             pager.innerHTML = `
                 <div class="mt-3 flex items-center justify-between text-sm text-slate-300">
                     <div>Page ${cur} / ${last}</div>
-                    <div class="flex gap-2">
-                        <button id="pgPrev" class="px-2 py-1 rounded bg-slate-700">${prevLabel}</button>
-                        <button id="pgNext" class="px-2 py-1 rounded bg-slate-700">${nextLabel}</button>
+                    <div class="flex gap-2 items-center">
+                        <button id="pgPrev" class="cursor-pointer px-2 py-1 rounded bg-slate-700">${prevLabel}</button>
+                        ${buttons}
+                        <button id="pgNext" class="cursor-pointer px-2 py-1 rounded bg-slate-700">${nextLabel}</button>
                     </div>
                 </div>
             `;
+
+            // attach handlers
             const prev = $('#pgPrev');
             const next = $('#pgNext');
             if (prev) prev.onclick = async () => { if (cur > 1) { window.__historyPage = cur - 1; await loadHistory(); } };
             if (next) next.onclick = async () => { if (cur < last) { window.__historyPage = cur + 1; await loadHistory(); } };
+
+            // page number buttons
+            pager.querySelectorAll('button[data-page]').forEach(b => {
+                b.addEventListener('click', async (ev) => {
+                    const p = Number(b.getAttribute('data-page'));
+                    if (!isNaN(p) && p !== cur) {
+                        window.__historyPage = p;
+                        await loadHistory();
+                    }
+                });
+            });
         }
     }
 
@@ -142,6 +189,7 @@ function renderFilterTags() {
     if (!container) return;
     container.innerHTML = '';
     const mappings = [
+        { id: 'filterQ', label: (window.SWAP_I18N && window.SWAP_I18N.search) || 'Search' },
         { id: 'filterPair', label: (window.SWAP_I18N && window.SWAP_I18N.pair) || 'Pair' },
         { id: 'filterType', label: (window.SWAP_I18N && window.SWAP_I18N.type) || 'Type' },
         { id: 'filterFrom', label: (window.SWAP_I18N && window.SWAP_I18N.from) || 'From' },
@@ -412,6 +460,8 @@ function boot() {
 
     const filter = $('#filterPair');
     if (filter) filter.onchange = () => { window.__historyPage = 1; loadHistory(); };
+    const filterQ = $('#filterQ');
+    if (filterQ) filterQ.oninput = () => { window.__historyPage = 1; /* debounce not needed for small datasets */ loadHistory(); };
     const filterType = $('#filterType');
     if (filterType) filterType.onchange = () => { window.__historyPage = 1; loadHistory(); };
     const filterFrom = $('#filterFrom');
@@ -470,7 +520,7 @@ function boot() {
 
     if (applyBtn) applyBtn.onclick = () => { window.__historyPage = 1; loadHistory(); closeSlide(); };
     if (resetBtn) resetBtn.onclick = () => {
-        const inputs = ['#filterPair', '#filterType', '#filterFrom', '#filterTo', '#filterMin', '#filterMax', '#perPage'];
+    const inputs = ['#filterQ', '#filterPair', '#filterType', '#filterFrom', '#filterTo', '#filterMin', '#filterMax', '#perPage'];
         inputs.forEach(s => { const el = $(s); if (!el) return; if (el.tagName === 'SELECT' || el.tagName === 'INPUT') { el.value = ''; } });
         // reset perPage to default 10
         const per = $('#perPage'); if (per) per.value = '10';

@@ -42,6 +42,20 @@ class SwapCalculationRepository
     {
         $q = SwapCalculation::with('pair:id,symbol');
 
+        // Free-text query (search across related pair symbol and position_type)
+        if (! empty($filters['q'])) {
+            $term = trim($filters['q']);
+            $q->where(function ($qq) use ($term) {
+                // match pair symbol partially
+                $qq->whereHas('pair', function ($qqq) use ($term) {
+                    $qqq->where('symbol', 'like', "%{$term}%");
+                });
+
+                // also allow searching position type (Long/Short)
+                $qq->orWhere('position_type', 'like', "%{$term}%");
+            });
+        }
+
         // Filter by pair symbol through relation to avoid exposing FK in API
         if (! empty($filters['pair'])) {
             $q->whereHas('pair', function ($qq) use ($filters) {

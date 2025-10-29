@@ -45,6 +45,10 @@
             swapShortLabel: {!! json_encode(__('swap_form.swap_short')) !!},
             daysLabel: {!! json_encode(__('swap_form.holding_days')) !!},
             positionLabel: {!! json_encode(__('swap_form.position_type')) !!}
+            ,
+            // history search label
+            search: {!! json_encode(__('swap_history.search') ?? 'Search') !!},
+            searchPlaceholder: {!! json_encode(__('swap_history.search_placeholder') ?? 'pair symbol or type') !!}
         };
     </script>
     @vite(["resources/js/swap-calculator.js"])

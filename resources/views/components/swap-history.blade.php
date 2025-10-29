@@ -26,6 +26,10 @@
 
             <div id="filterPanel" class="grid grid-cols-1 gap-3 md:grid-cols-12">
                 <div class="md:col-span-12">
+                    <label class="block text-xs text-slate-400">{{ __('swap_history.search') ?? 'Search' }}</label>
+                    <input id="filterQ" type="search" placeholder="{{ __('swap_history.search_placeholder') ?? 'pair symbol or type' }}" class="mt-1 w-full rounded bg-slate-700 px-2 py-2 text-white" />
+                </div>
+                <div class="md:col-span-12">
                     <label class="block text-xs text-slate-400">{{ __('swap_form.currency_pair') }}</label>
                     <select id="filterPair" class="mt-1 w-full rounded bg-slate-700 px-2 py-2 text-white">
                         <option value="">{{ __('swap_history.all_label') }}</option>

@@ -32,4 +32,6 @@ return [
     'apply' => 'Áp dụng',
     'reset' => 'Đặt lại',
     'filter' => 'Bộ lọc',
+    'search' => 'Tìm kiếm',
+    'search_placeholder' => 'ký hiệu cặp hoặc loại',
 ];

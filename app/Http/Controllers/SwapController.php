@@ -131,6 +131,7 @@ class SwapController extends Controller
     public function history(\Illuminate\Http\Request $request)
     {
         $filters = [
+            'q'             => $request->query('q'),
             'pair'          => $request->query('pair'),
             'position_type' => $request->query('position_type'),
             'date_from'     => $request->query('date_from'),
