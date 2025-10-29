@@ -1,9 +1,20 @@
 # 💹 Swap Calculator — Laravel 12 Test Project
 
+## 📑 Table of Contents
+- [General Information](#-general-information)
+- [Core Functionality](#-core-functionality)
+- [Admin Panel (Filament)](#️-admin-panel-filament)
+- [Installation & Running Guide](#️-installation--running-guide)
+- [Advanced Architecture](#️⃣-advanced-architecture)
+- [Code Style and Principles](#️-code-style-and-principles)
+- [Design Philosophy](#-design-philosophy)
+- [License](#-license)
+
 A clean and modular **Forex Swap Calculator** built with **Laravel 12**.  
 This project allows users to calculate total swap profit or loss based on trading parameters such as currency pair, lot size, swap rates, position type, and holding days.  
 The system validates inputs, performs instant AJAX calculations, stores results in the database, and displays recent calculation history.
 
+Demo Visit: [https://test-swap-calculator.2etitb.easypanel.host/](https://test-swap-calculator.2etitb.easypanel.host/)
 ---
 
 ## 🧩 General Information
@@ -14,6 +25,28 @@ The system validates inputs, performs instant AJAX calculations, stores results 
 - **Frontend:** Blade + TailwindCSS + Fetch API  
 - **Architecture:** MVC + Service–Repository–DTO Pattern  
 - **License:** MIT  
+
+---
+
+## 🧮 Core Functionality
+
+- Calculate **Total Swap** based on the formula:  
+  `Total Swap = Lot Size × Swap Rate × Holding Days`
+- Select **Long or Short** position (swap direction changes automatically)
+- Instant validation and calculation (via Fetch API)
+- Save every calculation to the database (`swap_calculations` table)
+- Display **calculation history** with filters, pagination, and delete actions
+- Built with clean separation of logic using **DTO, Service, and Repository layers**
+
+---
+
+## 🖥️ Admin Panel (Filament)
+
+The project includes **Filament Admin (v4)** for data management:
+
+- Manage swap calculation history (CRUD)
+- Import/Export CSV data
+- Auto-calculate `total_swap` when importing
 
 ---
 
@@ -49,13 +82,15 @@ DB_PASSWORD=
 ```bash
 php artisan migrate
 ```
+Can run seeder
+```bash
+php artisan db:seed
+```
 
 ### 5️⃣ Start the development server
 ```bash
 php artisan serve
 ```
-
-Visit: [https://test-swap-calculator.2etitb.easypanel.host/](https://test-swap-calculator.2etitb.easypanel.host/)
 
 ---
 
@@ -69,45 +104,6 @@ To clear caches after updating code or config:
 ```bash
 php artisan optimize:clear
 ```
-
----
-
-## 🧮 Core Functionality
-
-- Calculate **Total Swap** based on the formula:  
-  `Total Swap = Lot Size × Swap Rate × Holding Days`
-- Select **Long or Short** position (swap direction changes automatically)
-- Instant validation and calculation (via Fetch API)
-- Save every calculation to the database (`swap_calculations` table)
-- Display **calculation history** with filters, pagination, and delete actions
-- Built with clean separation of logic using **DTO, Service, and Repository layers**
-
----
-
-## 🖥️ Admin Panel (Filament)
-
-The project includes **Filament Admin (v4)** for data management:
-
-- Manage swap calculation history (CRUD)
-- Import/Export CSV data
-- Auto-calculate `total_swap` when importing
-- Optional: create `CurrencyPairResource` to manage default swap rates
-
----
-
-## 🗄️ Database Schema Overview
-
-**Table:** `swap_calculations`
-| Column | Type | Description |
-|---------|------|-------------|
-| id | bigint | Primary key |
-| currency_pair_id | bigint | Foreign key to `currency_pairs` |
-| lot_size | decimal(10,2) | Trade volume |
-| position_type | enum(Long, Short) | Trade direction |
-| swap_rate | decimal(10,2) | Swap rate (USD/lot/day) |
-| days | int | Holding days |
-| total_swap | decimal(15,4) | Total swap result |
-| created_at / updated_at | timestamps | Metadata |
 
 ---
 
