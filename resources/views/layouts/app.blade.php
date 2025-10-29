@@ -6,6 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
+        <link type="image/png" href="{{ asset("logo.png") }}" rel="icon">
         <title>@yield("title", "Forex Swap Calculator")</title>
 
         <!-- Fonts -->
@@ -22,7 +23,7 @@
     <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-12 py-6">
         <!-- Header -->
         <div class="mb-12 flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600 text-2xl font-bold text-white">₹</div>
+             <img src="{{ asset('logo.png') }}" alt="Swap Calculator Logo" class="rounded-lg bg-blue-600 h-12 w-12">
             <div>
                 <h1 class="text-2xl font-semibold text-white">{{ __("layout.brand_title") }}</h1>
                 <p class="text-sm text-slate-400">{{ __("layout.brand_subtitle") }}</p>
@@ -46,6 +47,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @stack("scripts")
 
-</body>
+    </body>
 
 </html>
